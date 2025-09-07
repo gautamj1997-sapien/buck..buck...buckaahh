@@ -1,258 +1,121 @@
 import React, { useState, useEffect, useRef } from "react";
 import Confetti from "react-confetti";
 
-// Permanent image URLs
-const chickenImg =
-  "https://upload.wikimedia.org/wikipedia/commons/1/11/Chicken.png";
-const crocImg =
-  "https://upload.wikimedia.org/wikipedia/commons/3/3e/NileCrocodile.png";
-
-// Hosted audio URLs
-const bgMusicUrl =
-  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
-const leapSoundUrl =
-  "https://www.soundjay.com/buttons/sounds/button-3.mp3";
-const winSoundUrl =
-  "https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3";
+// Asset URLs
+const chickenImg = "https://i.ibb.co/0F7YBvS/chicken.png";
+const crocImg = "https://i.ibb.co/K7Yh4vC/crocodile.png";
+const bgMusicUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+const jumpMusicUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3";
+const winMusicUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3";
 
 export default function App() {
-  const [started, setStarted] = useState(false);
-  const [countdown, setCountdown] = useState(3);
-  const [chickenX, setChickenX] = useState(50);
-  const [chickenY, setChickenY] = useState(350);
-  const [stones, setStones] = useState([]);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [chickenPos, setChickenPos] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [win, setWin] = useState(false);
-  const [firstInteraction, setFirstInteraction] = useState(false);
+  const [confetti, setConfetti] = useState(false);
+  const [message, setMessage] = useState("");
+  const chickenRef = useRef();
+  const crocs = Array(5).fill(0).map((_, i) => ({ id: i, pos: i * 80 + 100 }));
 
-  const bgAudioRef = useRef(null);
-  const leapAudioRef = useRef(null);
-  const winAudioRef = useRef(null);
+  const bgAudio = useRef(null);
+  const jumpAudio = useRef(null);
+  const winAudio = useRef(null);
 
-  // Setup stones
   useEffect(() => {
-    let generatedStones = [];
-    for (let i = 0; i < 6; i++) {
-      generatedStones.push({
-        id: i,
-        x: 100 + i * 100,
-        y: 350 + (i % 2 === 0 ? -40 : 40),
-        direction: i % 2 === 0 ? 1 : -1,
-      });
-    }
-    setStones(generatedStones);
+    bgAudio.current = new Audio(bgMusicUrl);
+    bgAudio.current.loop = true;
+    bgAudio.current.volume = 0.2;
+
+    jumpAudio.current = new Audio(jumpMusicUrl);
+    winAudio.current = new Audio(winMusicUrl);
   }, []);
 
-  // Animate stones
-  useEffect(() => {
-    if (!started || gameOver || win) return;
-    const interval = setInterval(() => {
-      setStones((stones) =>
-        stones.map((s) => {
-          let newY = s.y + s.direction * 2;
-          if (newY > 400 || newY < 300) s.direction *= -1;
-          return { ...s, y: newY };
-        })
-      );
-    }, 100);
-    return () => clearInterval(interval);
-  }, [started, gameOver, win]);
-
-  // Countdown before game starts
-  useEffect(() => {
-    if (started) return;
-    let timer;
-    if (countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    } else if (countdown === 0) {
-      setStarted(true);
-      if (firstInteraction && bgAudioRef.current) bgAudioRef.current.play();
-    }
-    return () => clearTimeout(timer);
-  }, [countdown, started, firstInteraction]);
-
-  // Handle first user interaction for audio
-  const handleFirstInteraction = () => {
-    if (!firstInteraction) {
-      setFirstInteraction(true);
-      if (bgAudioRef.current) bgAudioRef.current.play();
-    }
+  const startGame = () => {
+    setGameStarted(true);
+    bgAudio.current.play();
+    setMessage("Get ready! Chicken is cracking out of the egg...");
+    setTimeout(() => {
+      setMessage("Ready... Steady... Go!");
+    }, 3000);
   };
 
-  // Chicken jump
-  const handleJump = () => {
-    if (!firstInteraction) handleFirstInteraction();
-    if (gameOver || win) return;
-    if (leapAudioRef.current) leapAudioRef.current.play();
-
-    setChickenX((prevX) => prevX + 100);
-    const nextStone = stones.find(
-      (s) => s.x === chickenX + 100 && Math.abs(s.y - chickenY) < 50
-    );
-
-    if (!nextStone) {
-      setGameOver(true);
-      return;
-    }
-    setChickenY(nextStone.y);
-    if (chickenX + 100 > 600) {
-      setWin(true);
-      if (winAudioRef.current) winAudioRef.current.play();
-    }
+  const jumpChicken = () => {
+    if (gameOver) return;
+    jumpAudio.current.play();
+    setChickenPos((prev) => {
+      const next = prev + 50;
+      // simple collision check
+      if (crocs.some(c => c.pos === next)) {
+        setGameOver(true);
+        bgAudio.current.pause();
+        setMessage("Oh no! Crocodile got the chicken 🐊");
+        return prev;
+      }
+      if (next >= 500) {
+        // Win
+        setGameOver(true);
+        setConfetti(true);
+        bgAudio.current.pause();
+        winAudio.current.play();
+        setMessage("Winner gets Chicken dinner 🤤🎉");
+        return prev;
+      }
+      if (next > 300) setMessage("You're now getting dangerously close!");
+      return next;
+    });
   };
 
   const resetGame = () => {
-    setChickenX(50);
-    setChickenY(350);
-    setCountdown(3);
+    setChickenPos(0);
     setGameOver(false);
-    setWin(false);
-    setStarted(false);
-    setFirstInteraction(false);
+    setConfetti(false);
+    setMessage("");
+    bgAudio.current.play();
   };
 
   return (
-    <div
-      style={{
-        height: "100vh",
-        width: "100%",
-        background: "linear-gradient(to bottom, #87ceeb, #228B22)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
-        padding: "10px",
-        boxSizing: "border-box",
-      }}
-    >
-      <audio ref={bgAudioRef} src={bgMusicUrl} loop />
-      <audio ref={leapAudioRef} src={leapSoundUrl} />
-      <audio ref={winAudioRef} src={winSoundUrl} />
-
-      {!started && countdown > 0 && (
-        <h1 style={{ fontSize: "2.5rem", color: "white", textAlign: "center" }}>
-          {countdown === 3
-            ? "🐣 The egg is cracking..."
-            : countdown === 2
-            ? "Ready..."
-            : "Steady..."}
-        </h1>
-      )}
-
-      {!started && countdown === 0 && (
-        <h1 style={{ fontSize: "2.5rem", color: "white" }}>Go! 🚀</h1>
-      )}
-
-      {started && !gameOver && !win && (
-        <div
-          style={{
-            position: "relative",
-            width: "100%",
-            maxWidth: "700px",
-            height: "400px",
-            background: "#1E90FF",
-            borderRadius: "10px",
-            overflow: "hidden",
-          }}
-        >
-          {/* Chicken */}
+    <div className="game-container">
+      {confetti && <Confetti />}
+      {!gameStarted ? (
+        <div className="instructions">
+          <h2>Chicken vs Crocodiles 🐓🐊</h2>
+          <p>Tap the button to start the adventure!</p>
+          <button onClick={startGame}>Start Game</button>
+        </div>
+      ) : (
+        <>
           <img
+            ref={chickenRef}
             src={chickenImg}
             alt="chicken"
             style={{
               position: "absolute",
-              width: "50px",
-              left: chickenX,
-              top: chickenY,
-              transition: "all 0.3s",
+              bottom: chickenPos + "px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "60px",
             }}
           />
-
-          {/* Stones */}
-          {stones.map((s) => (
-            <div
-              key={s.id}
+          {crocs.map(c => (
+            <img
+              key={c.id}
+              src={crocImg}
+              alt="croc"
               style={{
                 position: "absolute",
-                left: s.x,
-                top: s.y,
+                bottom: c.pos + "px",
+                left: Math.random() * 400 + "px",
                 width: "80px",
-                height: "30px",
-                background: "gray",
-                borderRadius: "50%",
               }}
             />
           ))}
-
-          {/* Crocodiles */}
-          <img
-            src={crocImg}
-            alt="croc"
-            style={{
-              position: "absolute",
-              left: 250,
-              top: 380,
-              width: "80px",
-            }}
-          />
-          <img
-            src={crocImg}
-            alt="croc"
-            style={{
-              position: "absolute",
-              left: 450,
-              top: 320,
-              width: "80px",
-            }}
-          />
-        </div>
+          <div className="instructions">
+            <p>{message || "Tap the button to leap over crocodiles!"}</p>
+            {!gameOver && <button onClick={jumpChicken}>Leap 🐓</button>}
+            {gameOver && <button onClick={resetGame}>Reset</button>}
+          </div>
+        </>
       )}
-
-      {/* Jump Button */}
-      {started && !gameOver && !win && (
-        <button
-          onClick={handleJump}
-          style={{
-            marginTop: "15px",
-            padding: "10px 20px",
-            fontSize: "1.3rem",
-            borderRadius: "10px",
-          }}
-        >
-          Jump 🐓
-        </button>
-      )}
-
-      {/* Game Over */}
-      {gameOver && (
-        <div style={{ textAlign: "center", color: "white" }}>
-          <h2>💀 Oh no! The chicken fell in the water!</h2>
-          <button onClick={resetGame}>Reset</button>
-        </div>
-      )}
-
-      {/* Win */}
-      {win && (
-        <div style={{ textAlign: "center", color: "white" }}>
-          <Confetti />
-          <h2>🎉 Winner gets Chicken Dinner 🤤🤤🤤</h2>
-          <button onClick={resetGame}>Play Again</button>
-        </div>
-      )}
-
-      {/* Instructions */}
-      <div
-        style={{
-          marginTop: "15px",
-          fontSize: "0.9rem",
-          color: "white",
-          textAlign: "center",
-          maxWidth: "500px",
-        }}
-      >
-        Tap <b>Jump</b> when the next stone aligns. Avoid the water 🐊. Survive to the end to win!
-      </div>
     </div>
   );
 }
