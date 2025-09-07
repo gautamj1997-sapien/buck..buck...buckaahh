@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import Confetti from "react-confetti";
 
-// Hosted images
-const chickenImg = "https://i.postimg.cc/3x3Q6pXx/chicken.png";
-const crocImg = "https://i.postimg.cc/yNrrK2Zr/crocodile.png";
+// Permanent images (Wikipedia Commons)
+const chickenImg =
+  "https://upload.wikimedia.org/wikipedia/commons/1/11/Chicken.png";
+const crocImg =
+  "https://upload.wikimedia.org/wikipedia/commons/3/3e/NileCrocodile.png";
 
 // Hosted sounds
 const bgMusicUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
