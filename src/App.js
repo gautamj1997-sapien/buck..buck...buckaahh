@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import Confetti from "react-confetti";
 
-// Simple placeholder images from public URLs
+// Hosted images
 const chickenImg = "https://i.postimg.cc/3x3Q6pXx/chicken.png";
 const crocImg = "https://i.postimg.cc/yNrrK2Zr/crocodile.png";
 
-// Optional: you can replace with your own mp3 hosted URLs
+// Hosted sounds
 const bgMusicUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
 const leapSoundUrl = "https://www.soundjay.com/buttons/sounds/button-3.mp3";
 const winSoundUrl = "https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3";
@@ -23,7 +23,7 @@ export default function App() {
   const leapAudioRef = useRef(null);
   const winAudioRef = useRef(null);
 
-  // Setup stones with moving positions
+  // Setup stones
   useEffect(() => {
     let generatedStones = [];
     for (let i = 0; i < 6; i++) {
