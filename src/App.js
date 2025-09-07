@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import Confetti from "react-confetti";
 
-// Permanent images (Wikipedia Commons)
+// Permanent image URLs
 const chickenImg =
   "https://upload.wikimedia.org/wikipedia/commons/1/11/Chicken.png";
 const crocImg =
   "https://upload.wikimedia.org/wikipedia/commons/3/3e/NileCrocodile.png";
 
-// Hosted sounds
-const bgMusicUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
-const leapSoundUrl = "https://www.soundjay.com/buttons/sounds/button-3.mp3";
-const winSoundUrl = "https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3";
+// Hosted audio URLs
+const bgMusicUrl =
+  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+const leapSoundUrl =
+  "https://www.soundjay.com/buttons/sounds/button-3.mp3";
+const winSoundUrl =
+  "https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3";
 
 export default function App() {
   const [started, setStarted] = useState(false);
@@ -20,6 +23,7 @@ export default function App() {
   const [stones, setStones] = useState([]);
   const [gameOver, setGameOver] = useState(false);
   const [win, setWin] = useState(false);
+  const [firstInteraction, setFirstInteraction] = useState(false);
 
   const bgAudioRef = useRef(null);
   const leapAudioRef = useRef(null);
@@ -62,13 +66,22 @@ export default function App() {
       timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     } else if (countdown === 0) {
       setStarted(true);
-      if (bgAudioRef.current) bgAudioRef.current.play();
+      if (firstInteraction && bgAudioRef.current) bgAudioRef.current.play();
     }
     return () => clearTimeout(timer);
-  }, [countdown, started]);
+  }, [countdown, started, firstInteraction]);
+
+  // Handle first user interaction for audio
+  const handleFirstInteraction = () => {
+    if (!firstInteraction) {
+      setFirstInteraction(true);
+      if (bgAudioRef.current) bgAudioRef.current.play();
+    }
+  };
 
   // Chicken jump
   const handleJump = () => {
+    if (!firstInteraction) handleFirstInteraction();
     if (gameOver || win) return;
     if (leapAudioRef.current) leapAudioRef.current.play();
 
@@ -95,6 +108,7 @@ export default function App() {
     setGameOver(false);
     setWin(false);
     setStarted(false);
+    setFirstInteraction(false);
   };
 
   return (
@@ -108,6 +122,8 @@ export default function App() {
         alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
+        padding: "10px",
+        boxSizing: "border-box",
       }}
     >
       <audio ref={bgAudioRef} src={bgMusicUrl} loop />
@@ -115,7 +131,7 @@ export default function App() {
       <audio ref={winAudioRef} src={winSoundUrl} />
 
       {!started && countdown > 0 && (
-        <h1 style={{ fontSize: "3rem", color: "white" }}>
+        <h1 style={{ fontSize: "2.5rem", color: "white", textAlign: "center" }}>
           {countdown === 3
             ? "🐣 The egg is cracking..."
             : countdown === 2
@@ -125,17 +141,19 @@ export default function App() {
       )}
 
       {!started && countdown === 0 && (
-        <h1 style={{ fontSize: "3rem", color: "white" }}>Go! 🚀</h1>
+        <h1 style={{ fontSize: "2.5rem", color: "white" }}>Go! 🚀</h1>
       )}
 
       {started && !gameOver && !win && (
         <div
           style={{
             position: "relative",
-            width: "700px",
-            height: "500px",
-            background: "blue",
+            width: "100%",
+            maxWidth: "700px",
+            height: "400px",
+            background: "#1E90FF",
             borderRadius: "10px",
+            overflow: "hidden",
           }}
         >
           {/* Chicken */}
@@ -144,7 +162,7 @@ export default function App() {
             alt="chicken"
             style={{
               position: "absolute",
-              width: "60px",
+              width: "50px",
               left: chickenX,
               top: chickenY,
               transition: "all 0.3s",
@@ -191,14 +209,14 @@ export default function App() {
         </div>
       )}
 
-      {/* Button */}
+      {/* Jump Button */}
       {started && !gameOver && !win && (
         <button
           onClick={handleJump}
           style={{
-            marginTop: "20px",
+            marginTop: "15px",
             padding: "10px 20px",
-            fontSize: "1.5rem",
+            fontSize: "1.3rem",
             borderRadius: "10px",
           }}
         >
@@ -226,15 +244,14 @@ export default function App() {
       {/* Instructions */}
       <div
         style={{
-          marginTop: "20px",
-          fontSize: "1rem",
+          marginTop: "15px",
+          fontSize: "0.9rem",
           color: "white",
           textAlign: "center",
           maxWidth: "500px",
         }}
       >
-        Tap <b>Jump</b> when the next stone aligns. Don’t fall into water 🐊.
-        Survive till the end to win 🎉.
+        Tap <b>Jump</b> when the next stone aligns. Avoid the water 🐊. Survive to the end to win!
       </div>
     </div>
   );
